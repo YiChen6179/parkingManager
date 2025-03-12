@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Menu as IconMenu,
@@ -21,11 +21,14 @@ router.afterEach((to) => {
 const handleSelect = (key: string) => {
   router.push(key)
 }
+
+// 计算菜单宽度
+const menuWidth = computed(() => isCollapse.value ? '64px' : '200px')
 </script>
 
 <template>
   <el-container class="layout-container">
-    <el-aside :width="isCollapse ? '64px' : '200px'">
+    <el-aside :width="menuWidth" class="sidebar">
       <el-menu
         :default-active="$route.path"
         class="el-menu-vertical"
@@ -57,8 +60,8 @@ const handleSelect = (key: string) => {
     <el-container>
       <el-header>
         <div class="header-left">
-          <el-button type="text" @click="isCollapse = !isCollapse">
-            <el-icon><icon-menu /></el-icon>
+          <el-button type="text" @click="isCollapse = !isCollapse" class="toggle-btn">
+            <el-icon :class="{ 'rotate-icon': !isCollapse }"><icon-menu /></el-icon>
           </el-button>
           <h2>停车管理系统</h2>
         </div>
@@ -71,13 +74,15 @@ const handleSelect = (key: string) => {
 </template>
 
 <style scoped>
-
 .layout-container {
   height: 100vh;
 }
 
-.el-aside {
+.sidebar {
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: width 0.3s;
+  overflow: hidden;
 }
 
 .el-menu-vertical {
@@ -85,9 +90,22 @@ const handleSelect = (key: string) => {
   height: 100%;
 }
 
-.el-menu-vertical .el-menu-item {
+.el-menu-vertical:not(.el-menu--collapse) {
+  width: 200px;
+}
+
+.toggle-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
+}
+
+.toggle-btn .el-icon {
+  transition: transform 0.3s;
+}
+
+.rotate-icon {
+  transform: rotate(90deg);
 }
 
 .el-header {
@@ -96,6 +114,7 @@ const handleSelect = (key: string) => {
   display: flex;
   align-items: center;
   padding: 0 20px;
+  height: 60px;
 }
 
 .header-left {
@@ -112,7 +131,21 @@ const handleSelect = (key: string) => {
 }
 
 /* 当在首页时隐藏滚动条 */
-:deep(.el-main.hide-scrollbar) {
+.el-main.hide-scrollbar {
   overflow-y: hidden;
+}
+
+/* 为菜单项添加过渡效果 */
+:deep(.el-menu-item) {
+  transition: background-color 0.3s, padding 0.3s;
+}
+
+/* 为图标添加过渡效果 */
+:deep(.el-menu-item .el-icon) {
+  transition: margin-right 0.3s;
+}
+
+:deep(.el-menu--collapse .el-menu-item .el-icon) {
+  margin-right: 0;
 }
 </style>

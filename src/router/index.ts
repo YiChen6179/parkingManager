@@ -4,15 +4,21 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
+      path: '/auth',
+      name: 'auth',
+      component: () => import('../views/Auth.vue'),
+      meta: { title: '登录/注册' }
+    },
+    {
       path: '/',
       component: () => import('../layouts/MainLayout.vue'),
       children: [
-        {
-          path: '',
-          name: 'dashboard',
-          component: () => import('../views/Dashboard.vue'),
-          meta: { title: '首页' }
-        },
+        // {
+        //   path: '',
+        //   name: 'dashboard',
+        //   component: () => import('../views/Dashboard.vue'),
+        //   meta: { title: '首页' }
+        // },
         {
           path: 'parking-lots',
           name: 'parking-lots',
@@ -40,6 +46,19 @@ const router = createRouter({
       ]
     }
   ]
+})
+
+// 添加全局前置守卫，检查登录状态
+router.beforeEach((to, from, next) => {
+  // 模拟检查登录状态，实际项目中应该从localStorage或Vuex/Pinia中获取
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
+  
+  // 如果用户未登录且访问的不是登录页，则重定向到登录页
+  if (!isLoggedIn && to.path !== '/auth') {
+    next('/auth')
+  } else {
+    next()
+  }
 })
 
 export default router
