@@ -6,16 +6,18 @@ import {
   Location,
   Document,
   Setting,
-  HomeFilled
+  HomeFilled,
+  SwitchButton
 } from '@element-plus/icons-vue'
+import { ElMessageBox } from 'element-plus'
 
 const router = useRouter()
 const isCollapse = ref(false)
-const isHomePage = ref(window.location.pathname === '/' || window.location.pathname === '')
+const isHomePage = ref(window.location.pathname === '/dashboard')
 
 // 监听路由变化，更新isHomePage状态
 router.afterEach((to) => {
-  isHomePage.value = to.path === '/'
+  isHomePage.value = to.path === '/dashboard'
 })
 
 const handleSelect = (key: string) => {
@@ -24,6 +26,18 @@ const handleSelect = (key: string) => {
 
 // 计算菜单宽度
 const menuWidth = computed(() => isCollapse.value ? '64px' : '200px')
+
+// 退出登录
+const handleLogout = () => {
+  ElMessageBox.confirm('确定要退出登录吗?', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    localStorage.removeItem('isLoggedIn')
+    router.push('/auth')
+  }).catch(() => {})
+}
 </script>
 
 <template>
@@ -35,7 +49,7 @@ const menuWidth = computed(() => isCollapse.value ? '64px' : '200px')
         :collapse="isCollapse"
         @select="handleSelect"
       >
-        <el-menu-item index="/">
+        <el-menu-item index="/dashboard">
           <el-icon><home-filled /></el-icon>
           <template #title>首页</template>
         </el-menu-item>
@@ -64,6 +78,12 @@ const menuWidth = computed(() => isCollapse.value ? '64px' : '200px')
             <el-icon :class="{ 'rotate-icon': !isCollapse }"><icon-menu /></el-icon>
           </el-button>
           <h2>停车管理系统</h2>
+        </div>
+        <div class="header-right">
+          <el-button type="danger" plain size="small" @click="handleLogout">
+            <el-icon><switch-button /></el-icon>
+            <span>退出登录</span>
+          </el-button>
         </div>
       </el-header>
       <el-main :class="{'hide-scrollbar': isHomePage}" class="rr-view">
@@ -113,6 +133,7 @@ const menuWidth = computed(() => isCollapse.value ? '64px' : '200px')
   border-bottom: 1px solid #dcdfe6;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 20px;
   height: 60px;
 }
@@ -121,6 +142,11 @@ const menuWidth = computed(() => isCollapse.value ? '64px' : '200px')
   display: flex;
   align-items: center;
   gap: 20px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
 }
 
 .el-main {

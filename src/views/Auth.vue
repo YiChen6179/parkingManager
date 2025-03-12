@@ -75,7 +75,7 @@ const handleLogin = () => {
     // 模拟登录成功
     localStorage.setItem('isLoggedIn', 'true')
     ElMessage.success('登录成功')
-    router.push('/')
+    router.push('/dashboard')
   }, 1000)
 }
 
