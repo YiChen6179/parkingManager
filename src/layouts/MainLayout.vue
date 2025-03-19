@@ -169,9 +169,22 @@ const handleLogout = () => {
 /* 为图标添加过渡效果 */
 :deep(.el-menu-item .el-icon) {
   transition: margin-right 0.3s;
+  font-size: 24px;
+  margin-right: 12px;
+}
+
+/* 调整标题栏图标尺寸 */
+:deep(.header-left .el-icon) {
+  font-size: 24px;
+  transition: transform 0.3s;
+}
+
+:deep(.header-left .rotate-icon) {
+  transform: rotate(90deg);
 }
 
 :deep(.el-menu--collapse .el-menu-item .el-icon) {
   margin-right: 0;
+  font-size: 28px;
 }
 </style>
