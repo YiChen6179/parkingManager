@@ -1,29 +1,18 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ref, onMounted } from 'vue'
+import { useAuth, useFormValidation } from '@/hooks'
 import { User, Lock, Message, Location, Document, Setting } from '@element-plus/icons-vue'
+import type { FormRules } from 'element-plus'
+import { LoginParams } from '@/types'
 
-const router = useRouter()
 const isLogin = ref(true)
-const loading = ref(false)
+const rememberMe = ref(false)
 
-// 登录表单数据
-const loginForm = ref({
-  username: '',
-  password: ''
-})
+// 使用认证hook
+const { loading, handleLogin, checkAuthAndRedirect } = useAuth()
 
-// 注册表单数据
-const registerForm = ref({
-  username: '',
-  password: '',
-  confirmPassword: '',
-  email: ''
-})
-
-// 表单验证规则
-const loginRules = {
+// 登录表单验证
+const loginFormRules: FormRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
@@ -34,7 +23,17 @@ const loginRules = {
   ]
 }
 
-const registerRules = {
+// 使用表单验证hook - 登录表单
+const initialLoginForm: LoginParams = { username: '', password: '' }
+const { 
+  form: loginForm, 
+  formRef: loginFormRef,
+  formRules: loginRules,
+  validateForm: validateLoginForm
+} = useFormValidation(initialLoginForm, loginFormRules)
+
+// 注册表单验证
+const registerFormRules: FormRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
@@ -62,33 +61,55 @@ const registerRules = {
   ]
 }
 
+// 使用表单验证hook - 注册表单
+const initialRegisterForm = {
+  username: '',
+  password: '',
+  confirmPassword: '',
+  email: ''
+}
+
+const { 
+  form: registerForm, 
+  formRef: registerFormRef,
+  formRules: registerRules,
+  validateForm: validateRegisterForm,
+  resetForm: resetRegisterForm
+} = useFormValidation(initialRegisterForm, registerFormRules)
+
 // 切换登录/注册表单
 const toggleForm = () => {
   isLogin.value = !isLogin.value
 }
 
 // 登录处理
-const handleLogin = () => {
-  loading.value = true
-  setTimeout(() => {
-    loading.value = false
-    // 模拟登录成功
-    localStorage.setItem('isLoggedIn', 'true')
-    ElMessage.success('登录成功')
-    router.push('/dashboard')
-  }, 1000)
+const doLogin = async () => {
+  const valid = await validateLoginForm()
+  if (!valid) return
+  
+  await handleLogin(loginForm.value, rememberMe.value)
 }
 
 // 注册处理
-const handleRegister = () => {
+const doRegister = async () => {
+  const valid = await validateRegisterForm()
+  if (!valid) return
+  
+  // 模拟注册过程
   loading.value = true
   setTimeout(() => {
     loading.value = false
     // 切换到登录表单
     isLogin.value = true
-    ElMessage.success('注册成功，请登录')
+    resetRegisterForm()
   }, 1000)
 }
+
+// 在组件挂载时检查登录状态
+onMounted(() => {
+  // 检查登录状态并重定向
+  checkAuthAndRedirect()
+})
 </script>
 
 <template>
@@ -102,7 +123,13 @@ const handleRegister = () => {
             <p>请登录您的账号以继续使用停车管理系统</p>
           </div>
           
-          <el-form :model="loginForm" :rules="loginRules" label-position="top" class="login-form">
+          <el-form 
+            ref="loginFormRef"
+            :model="loginForm" 
+            :rules="loginRules" 
+            label-position="top" 
+            class="login-form"
+          >
             <el-form-item prop="username">
               <el-input v-model="loginForm.username" placeholder="用户名">
                 <template #prefix>
@@ -120,15 +147,15 @@ const handleRegister = () => {
             </el-form-item>
             
             <div class="form-actions">
-              <el-checkbox>记住我</el-checkbox>
-              <el-link type="primary">忘记密码?</el-link>
+              <el-checkbox v-model="rememberMe">记住我</el-checkbox>
+              <el-link>忘记密码?</el-link>
             </div>
             
-            <el-button type="primary" :loading="loading" @click="handleLogin" class="submit-btn">登录</el-button>
+            <el-button type="primary" :loading="loading" @click="doLogin" class="submit-btn">登录</el-button>
             
             <div class="form-footer">
               <span>还没有账号?</span>
-              <el-button type="text" @click="toggleForm">立即注册</el-button>
+              <el-button link @click="toggleForm">立即注册</el-button>
             </div>
           </el-form>
         </div>
@@ -140,7 +167,13 @@ const handleRegister = () => {
             <p>注册一个新账号以使用停车管理系统</p>
           </div>
           
-          <el-form :model="registerForm" :rules="registerRules" label-position="top" class="register-form">
+          <el-form 
+            ref="registerFormRef"
+            :model="registerForm" 
+            :rules="registerRules" 
+            label-position="top" 
+            class="register-form"
+          >
             <el-form-item prop="username">
               <el-input v-model="registerForm.username" placeholder="用户名">
                 <template #prefix>
@@ -173,11 +206,11 @@ const handleRegister = () => {
               </el-input>
             </el-form-item>
             
-            <el-button type="primary" :loading="loading" @click="handleRegister" class="submit-btn">注册</el-button>
+            <el-button type="primary" :loading="loading" @click="doRegister" class="submit-btn">注册</el-button>
             
             <div class="form-footer">
               <span>已有账号?</span>
-              <el-button type="text" @click="toggleForm">返回登录</el-button>
+              <el-button link @click="toggleForm">返回登录</el-button>
             </div>
           </el-form>
         </div>

@@ -1,190 +1,227 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  Menu as IconMenu,
-  Location,
-  Document,
-  Setting,
-  HomeFilled,
-  SwitchButton
+import { 
+  Odometer, 
+  User, 
+  List, 
+  LocationInformation, 
+  Box,
+  Menu, 
+  Share,
+  SetUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight
 } from '@element-plus/icons-vue'
-import { ElMessageBox } from 'element-plus'
+import { useAuth } from '@/hooks'
 
 const router = useRouter()
+const activeMenu = computed(() => router.currentRoute.value.path)
 const isCollapse = ref(false)
-const isHomePage = ref(window.location.pathname === '/dashboard')
 
-// 监听路由变化，更新isHomePage状态
-router.afterEach((to) => {
-  isHomePage.value = to.path === '/dashboard'
-})
+// 使用认证hook
+const { currentUser, handleLogout, checkAuthAndRedirect } = useAuth()
 
-const handleSelect = (key: string) => {
-  router.push(key)
-}
+// 计算用户名显示
+const username = computed(() => {
+  return currentUser.value?.username || '管理员';
+});
 
-// 计算菜单宽度
-const menuWidth = computed(() => isCollapse.value ? '64px' : '200px')
+// 定期检查登录状态
+let checkInterval: number | null = null
 
-// 退出登录
-const handleLogout = () => {
-  ElMessageBox.confirm('确定要退出登录吗?', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    localStorage.removeItem('isLoggedIn')
-    router.push('/auth')
-  }).catch(() => {})
-}
+onMounted(() => {
+  console.log('MainLayout组件挂载');
+  
+  // 初始检查登录状态
+  checkAuthAndRedirect();
+  
+  // 设置定期检查（每30秒）
+  checkInterval = window.setInterval(() => {
+    checkAuthAndRedirect();
+  }, 30000);
+});
+
+onBeforeUnmount(() => {
+  // 清除定时器
+  if (checkInterval !== null) {
+    clearInterval(checkInterval);
+  }
+});
 </script>
 
 <template>
-  <el-container class="layout-container">
-    <el-aside :width="menuWidth" class="sidebar">
-      <el-menu
-        :default-active="$route.path"
-        class="el-menu-vertical"
-        :collapse="isCollapse"
-        @select="handleSelect"
-      >
-        <el-menu-item index="/dashboard">
-          <el-icon><home-filled /></el-icon>
-          <template #title>首页</template>
-        </el-menu-item>
-        <el-menu-item index="/parking-lots">
-          <el-icon><location /></el-icon>
-          <template #title>停车场管理</template>
-        </el-menu-item>
-        <el-menu-item index="/parking-spaces">
-          <el-icon><document /></el-icon>
-          <template #title>车位管理</template>
-        </el-menu-item>
-        <el-menu-item index="/fee-rules">
-          <el-icon><setting /></el-icon>
-          <template #title>计费规则</template>
-        </el-menu-item>
-        <el-menu-item index="/fee-records">
-          <el-icon><setting /></el-icon>
-          <template #title>收费记录</template>
-        </el-menu-item>
-      </el-menu>
-    </el-aside>
-    <el-container>
-      <el-header>
-        <div class="header-left">
-          <el-button type="text" @click="isCollapse = !isCollapse" class="toggle-btn">
-            <el-icon :class="{ 'rotate-icon': !isCollapse }"><icon-menu /></el-icon>
-          </el-button>
-          <h2>停车管理系统</h2>
+  <div class="main-layout">
+    <el-container class="layout-container">
+      <!-- 侧边栏 -->
+      <el-aside width="auto" class="aside">
+        <div class="logo-container">
+          <h1 class="logo" v-if="!isCollapse">停车场管理系统</h1>
+          <h1 class="logo-small" v-else>停</h1>
         </div>
-        <div class="header-right">
-          <el-button type="danger" plain size="small" @click="handleLogout">
-            <el-icon><switch-button /></el-icon>
-            <span>退出登录</span>
-          </el-button>
+        
+        <el-menu
+          :default-active="activeMenu"
+          class="menu"
+          :collapse="isCollapse"
+          :collapse-transition="false"
+          router
+        >
+          <el-menu-item index="/dashboard">
+            <el-icon><Menu /></el-icon>
+            <template #title>首页</template>
+          </el-menu-item>
+          
+          <el-sub-menu index="1">
+            <template #title>
+              <el-icon><Box /></el-icon>
+              <span>停车场管理</span>
+            </template>
+            <el-menu-item index="/parking-lots">
+              <el-icon><List /></el-icon>
+              <span>停车场列表</span>
+            </el-menu-item>
+            <el-menu-item index="/parking-zones">
+              <el-icon><Share /></el-icon>
+              <span>停车区管理</span>
+            </el-menu-item>
+            <el-menu-item index="/parking-spots">
+              <el-icon><SetUp /></el-icon>
+              <span>停车位管理</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
+          <el-menu-item index="/parking-records">
+            <el-icon><Odometer /></el-icon>
+            <template #title>停车记录</template>
+          </el-menu-item>
+          
+          <el-menu-item index="/vehicles">
+            <el-icon><LocationInformation /></el-icon>
+            <template #title>车辆管理</template>
+          </el-menu-item>
+          
+          <el-menu-item index="/users">
+            <el-icon><User /></el-icon>
+            <template #title>用户管理</template>
+          </el-menu-item>
+        </el-menu>
+        
+        <div class="collapse-btn" @click="isCollapse = !isCollapse">
+          <el-icon v-if="isCollapse"><ArrowRight /></el-icon>
+          <el-icon v-else><ArrowLeft /></el-icon>
         </div>
-      </el-header>
-      <el-main :class="{'hide-scrollbar': isHomePage}" class="rr-view">
-        <router-view />
-      </el-main>
+      </el-aside>
+      
+      <!-- 主内容区 -->
+      <el-container>
+        <el-header class="header">
+          <div class="header-left">
+            <h2>{{ router.currentRoute.value.meta.title }}</h2>
+          </div>
+          <div class="header-right">
+            <el-dropdown>
+              <span class="user-dropdown">
+                {{ username }} <el-icon><ArrowDown /></el-icon>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+        </el-header>
+        
+        <el-main class="main">
+          <router-view />
+        </el-main>
+      </el-container>
     </el-container>
-  </el-container>
+  </div>
 </template>
 
 <style scoped>
-.layout-container {
+.main-layout {
   height: 100vh;
+  width: 100%;
 }
 
-.sidebar {
-  background-color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: width 0.3s;
-  overflow: hidden;
-}
-
-.el-menu-vertical {
-  border-right: none;
+.layout-container {
   height: 100%;
 }
 
-.el-menu-vertical:not(.el-menu--collapse) {
-  width: 200px;
+.aside {
+  background-color: #304156;
+  transition: width 0.3s;
+  position: relative;
 }
 
-.toggle-btn {
+.logo-container {
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #fff;
+  background-color: #263445;
 }
 
-.toggle-btn .el-icon {
-  transition: transform 0.3s;
+.logo {
+  font-size: 18px;
+  margin: 0;
+  white-space: nowrap;
 }
 
-.rotate-icon {
-  transform: rotate(90deg);
+.logo-small {
+  font-size: 20px;
+  margin: 0;
 }
 
-.el-header {
+.menu {
+  border-right: none;
+}
+
+.header {
   background-color: #fff;
   border-bottom: 1px solid #dcdfe6;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   padding: 0 20px;
-  height: 60px;
 }
 
-.header-left {
+.header-left h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.user-dropdown {
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 20px;
+  font-size: 14px;
 }
 
-.header-right {
-  display: flex;
-  align-items: center;
-}
-
-.el-main {
+.main {
   background-color: #f0f2f5;
-  padding: 20px;
-  overflow-x: hidden;
-  overflow-y: auto;
+  padding: 0;
+  overflow: auto;
 }
 
-/* 当在首页时隐藏滚动条 */
-.el-main.hide-scrollbar {
-  overflow-y: hidden;
+.collapse-btn {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #909399;
+  cursor: pointer;
+  padding: 8px 0;
 }
 
-/* 为菜单项添加过渡效果 */
-:deep(.el-menu-item) {
-  transition: background-color 0.3s, padding 0.3s;
-}
-
-/* 为图标添加过渡效果 */
-:deep(.el-menu-item .el-icon) {
-  transition: margin-right 0.3s;
-  font-size: 24px;
-  margin-right: 12px;
-}
-
-/* 调整标题栏图标尺寸 */
-:deep(.header-left .el-icon) {
-  font-size: 24px;
-  transition: transform 0.3s;
-}
-
-:deep(.header-left .rotate-icon) {
-  transform: rotate(90deg);
-}
-
-:deep(.el-menu--collapse .el-menu-item .el-icon) {
-  margin-right: 0;
-  font-size: 28px;
+.collapse-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 </style>

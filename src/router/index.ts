@@ -1,77 +1,142 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import authUtils from '@/utils/auth'
+import { ROUTE_PATHS, ROUTE_NAMES } from '@/constants'
+
+// 定义路由元数据类型
+interface RouteMeta {
+  title?: string;
+  requiresAuth?: boolean;
+}
+
+// 扩展Vue Router的RouteMeta接口
+declare module 'vue-router' {
+  interface RouteMeta {
+    title?: string;
+    requiresAuth?: boolean;
+  }
+}
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      path: '/',
-      redirect: '/auth'
+      path: ROUTE_PATHS.ROOT,
+      redirect: ROUTE_PATHS.AUTH
     },
     {
-      path: '/auth',
-      name: 'auth',
+      path: ROUTE_PATHS.AUTH,
+      name: ROUTE_NAMES.AUTH,
       component: () => import('../views/Auth.vue'),
-      meta: { title: '登录/注册' }
+      meta: { title: '登录/注册', requiresAuth: false }
     },
     {
       path: '/main',
       component: () => import('../layouts/MainLayout.vue'),
       children: [
         {
-          path: '/dashboard',
-          name: 'dashboard',
+          path: ROUTE_PATHS.DASHBOARD,
+          name: ROUTE_NAMES.DASHBOARD,
           component: () => import('../views/Dashboard.vue'),
-          meta: { title: '首页' }
+          meta: { title: '首页', requiresAuth: true }
         },
+        // 停车场管理
         {
-          path: '/parking-lots',
-          name: 'parking-lots',
+          path: ROUTE_PATHS.PARKING_LOTS,
+          name: ROUTE_NAMES.PARKING_LOTS,
           component: () => import('../views/parking/ParkingLots.vue'),
-          meta: { title: '停车场管理' }
+          meta: { title: '停车场管理', requiresAuth: true }
         },
+        // 停车区管理
         {
-          path: '/parking-spaces',
-          name: 'parking-spaces',
-          component: () => import('../views/parking/ParkingSpaces.vue'),
-          meta: { title: '车位管理' }
+          path: ROUTE_PATHS.PARKING_ZONES,
+          name: ROUTE_NAMES.PARKING_ZONES,
+          component: () => import('../views/parking/ParkingZones.vue'),
+          meta: { title: '停车区管理', requiresAuth: true }
         },
+        // 停车位管理
         {
-          path: '/fee-rules',
-          name: 'fee-rules',
-          component: () => import('../views/fees/FeeRules.vue'),
-          meta: { title: '计费规则' }
+          path: ROUTE_PATHS.PARKING_SPOTS,
+          name: ROUTE_NAMES.PARKING_SPOTS,
+          component: () => import('../views/parking/ParkingSpots.vue'),
+          meta: { title: '停车位管理', requiresAuth: true }
         },
+        // 停车记录管理
         {
-          path: '/fee-records',
-          name: 'fee-records',
-          component: () => import('../views/fees/FeeRecords.vue'),
-          meta: { title: '收费记录' }
+          path: ROUTE_PATHS.PARKING_RECORDS,
+          name: ROUTE_NAMES.PARKING_RECORDS,
+          component: () => import('../views/parking/ParkingRecords.vue'),
+          meta: { title: '停车记录', requiresAuth: true }
+        },
+        // 用户管理
+        {
+          path: ROUTE_PATHS.USERS,
+          name: ROUTE_NAMES.USERS,
+          component: () => import('../views/user/Users.vue'),
+          meta: { title: '用户管理', requiresAuth: true }
+        },
+        // 车辆管理
+        {
+          path: ROUTE_PATHS.VEHICLES,
+          name: ROUTE_NAMES.VEHICLES,
+          component: () => import('../views/vehicle/Vehicles.vue'),
+          meta: { title: '车辆管理', requiresAuth: true }
         }
       ]
+    },
+    // 404页面
+    {
+      path: '/:pathMatch(.*)*',
+      name: ROUTE_NAMES.NOT_FOUND,
+      component: () => import('../views/NotFound.vue'),
+      meta: { title: '页面不存在', requiresAuth: false }
     }
   ]
 })
 
-// 添加全局前置守卫，检查登录状态
+// 在应用启动时初始化认证状态
+authUtils.initializeAuth();
+
+// 添加全局前置守卫，处理认证和授权
 router.beforeEach((to, from, next) => {
-  // 模拟检查登录状态，实际项目中应该从localStorage或Vuex/Pinia中获取
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
+  console.log(`路由变化: 从 ${from.path} 到 ${to.path}`);
   
-  // 如果路径是根路径，直接重定向到登录页
-  if (to.path === '/') {
-    next('/auth')
+  // 判断页面是否需要认证
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth !== false);
+  
+  // 使用认证工具检查登录状态
+  const isAuthenticated = authUtils.checkIsLoggedIn();
+  
+  console.log(`路由守卫: 路径=${to.path}, 需要认证=${requiresAuth}, 认证状态=${isAuthenticated}`);
+  
+  // 处理根路径
+  if (to.path === ROUTE_PATHS.ROOT) {
+    next(ROUTE_PATHS.AUTH);
+    return;
   }
-  // 如果用户未登录且访问的不是登录页，则重定向到登录页
-  else if (!isLoggedIn && to.path !== '/auth') {
-    next('/auth')
-  } 
-  // 如果用户已登录且访问登录页，则重定向到主页
-  else if (isLoggedIn && to.path === '/auth') {
-    next('/dashboard')
-  } 
-  else {
-    next()
+  
+  // 如果需要认证但未认证，重定向到登录页
+  if (requiresAuth && !isAuthenticated) {
+    console.log('需要认证但未登录，重定向到登录页');
+    next(ROUTE_PATHS.AUTH);
+    return;
   }
-})
+  
+  // 如果已认证但访问登录页，重定向到首页
+  if (isAuthenticated && to.path === ROUTE_PATHS.AUTH) {
+    console.log('已登录但访问登录页，重定向到首页');
+    next(ROUTE_PATHS.DASHBOARD);
+    return;
+  }
+  
+  // 设置页面标题
+  if (to.meta.title) {
+    document.title = `${to.meta.title} - 停车场管理系统`;
+  } else {
+    document.title = '停车场管理系统';
+  }
+  
+  // 允许访问请求的页面
+  next();
+});
 
 export default router
