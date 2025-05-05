@@ -10,6 +10,9 @@ export default defineConfig({
     }
   },
   server: {
+    host: '0.0.0.0',
+    port: 8090,
+    open: true,
     proxy: {
       // 使用/api前缀统一处理API请求
       '/api': {

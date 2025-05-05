@@ -4,6 +4,7 @@ import { useAuth, useFormValidation } from '@/hooks'
 import { User, Lock, Message, Location, Document, Setting } from '@element-plus/icons-vue'
 import type { FormRules } from 'element-plus'
 import { LoginParams } from '@/types'
+import logoImg from '@/assets/logo.png'
 
 const isLogin = ref(true)
 const rememberMe = ref(false)
@@ -119,6 +120,10 @@ onMounted(() => {
         <!-- 登录表单 -->
         <div class="form-panel login-panel" :class="{ 'active': isLogin }">
           <div class="form-header">
+            <div class="logo-container">
+              <img :src="logoImg" alt="停车场管理系统" class="logo-image" v-if="false">
+              <h1 class="logo-text">停车场管理系统</h1>
+            </div>
             <h2>欢迎回来</h2>
             <p>请登录您的账号以继续使用停车管理系统</p>
           </div>
@@ -131,7 +136,7 @@ onMounted(() => {
             class="login-form"
           >
             <el-form-item prop="username">
-              <el-input v-model="loginForm.username" placeholder="用户名">
+              <el-input v-model="loginForm.username" placeholder="用户名" size="large">
                 <template #prefix>
                   <el-icon><user /></el-icon>
                 </template>
@@ -139,7 +144,7 @@ onMounted(() => {
             </el-form-item>
             
             <el-form-item prop="password">
-              <el-input v-model="loginForm.password" type="password" placeholder="密码" show-password>
+              <el-input v-model="loginForm.password" type="password" placeholder="密码" show-password size="large">
                 <template #prefix>
                   <el-icon><lock /></el-icon>
                 </template>
@@ -148,14 +153,14 @@ onMounted(() => {
             
             <div class="form-actions">
               <el-checkbox v-model="rememberMe">记住我</el-checkbox>
-              <el-link>忘记密码?</el-link>
+              <el-link type="primary">忘记密码?</el-link>
             </div>
             
-            <el-button type="primary" :loading="loading" @click="doLogin" class="submit-btn">登录</el-button>
+            <el-button type="primary" :loading="loading" @click="doLogin" class="submit-btn" size="large">登录</el-button>
             
             <div class="form-footer">
               <span>还没有账号?</span>
-              <el-button link @click="toggleForm">立即注册</el-button>
+              <el-button link type="primary" @click="toggleForm">立即注册</el-button>
             </div>
           </el-form>
         </div>
@@ -163,6 +168,10 @@ onMounted(() => {
         <!-- 注册表单 -->
         <div class="form-panel register-panel" :class="{ 'active': !isLogin }">
           <div class="form-header">
+            <div class="logo-container">
+              <img :src="logoImg" alt="停车场管理系统" class="logo-image" v-if="false">
+              <h1 class="logo-text">停车场管理系统</h1>
+            </div>
             <h2>创建账号</h2>
             <p>注册一个新账号以使用停车管理系统</p>
           </div>
@@ -175,7 +184,7 @@ onMounted(() => {
             class="register-form"
           >
             <el-form-item prop="username">
-              <el-input v-model="registerForm.username" placeholder="用户名">
+              <el-input v-model="registerForm.username" placeholder="用户名" size="large">
                 <template #prefix>
                   <el-icon><user /></el-icon>
                 </template>
@@ -183,7 +192,7 @@ onMounted(() => {
             </el-form-item>
             
             <el-form-item prop="email">
-              <el-input v-model="registerForm.email" placeholder="邮箱">
+              <el-input v-model="registerForm.email" placeholder="邮箱" size="large">
                 <template #prefix>
                   <el-icon><message /></el-icon>
                 </template>
@@ -191,7 +200,7 @@ onMounted(() => {
             </el-form-item>
             
             <el-form-item prop="password">
-              <el-input v-model="registerForm.password" type="password" placeholder="密码" show-password>
+              <el-input v-model="registerForm.password" type="password" placeholder="密码" show-password size="large">
                 <template #prefix>
                   <el-icon><lock /></el-icon>
                 </template>
@@ -199,18 +208,18 @@ onMounted(() => {
             </el-form-item>
             
             <el-form-item prop="confirmPassword">
-              <el-input v-model="registerForm.confirmPassword" type="password" placeholder="确认密码" show-password>
+              <el-input v-model="registerForm.confirmPassword" type="password" placeholder="确认密码" show-password size="large">
                 <template #prefix>
                   <el-icon><lock /></el-icon>
                 </template>
               </el-input>
             </el-form-item>
             
-            <el-button type="primary" :loading="loading" @click="doRegister" class="submit-btn">注册</el-button>
+            <el-button type="primary" :loading="loading" @click="doRegister" class="submit-btn" size="large">注册</el-button>
             
             <div class="form-footer">
               <span>已有账号?</span>
-              <el-button link @click="toggleForm">返回登录</el-button>
+              <el-button link type="primary" @click="toggleForm">返回登录</el-button>
             </div>
           </el-form>
         </div>
@@ -277,17 +286,23 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <div class="auth-footer">
+      <p>© {{ new Date().getFullYear() }} 停车场管理系统 - 版权所有</p>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .auth-container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3a7bd5 0%, #9d50bb 100%);
   padding: 20px;
+  position: relative;
 }
 
 .auth-box {
@@ -295,11 +310,12 @@ onMounted(() => {
   max-width: 100%;
   height: 600px;
   background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   position: relative;
   display: flex;
+  margin: 20px 0;
 }
 
 .form-container {
@@ -314,7 +330,7 @@ onMounted(() => {
   top: 0;
   width: 100%;
   height: 100%;
-  padding: 50px 40px;
+  padding: 40px;
   box-sizing: border-box;
   transition: all 0.6s ease-in-out;
   opacity: 0;
@@ -322,6 +338,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  overflow-y: auto;
 }
 
 .login-panel {
@@ -358,7 +375,7 @@ onMounted(() => {
   position: relative;
   width: 50%;
   height: 100%;
-  background: linear-gradient(135deg, #3a7bd5 0%, #00d2ff 100%);
+  background: linear-gradient(135deg, #3a7bd5 0%, #9d50bb 100%);
   overflow: hidden;
   transition: all 0.6s ease-in-out;
   color: #fff;
@@ -459,6 +476,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  backdrop-filter: blur(8px);
 }
 
 .feature-item .el-icon, .benefit-item .el-icon {
@@ -479,19 +497,89 @@ onMounted(() => {
 
 .submit-btn {
   width: 100%;
-  margin-top: 5px;
+  margin-top: 10px;
   padding: 12px 0;
   font-size: 16px;
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  transition: all 0.3s;
+}
+
+.submit-btn:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(58, 123, 213, 0.4);
 }
 
 .form-footer {
-  margin-top: 15px;
+  margin-top: 20px;
   text-align: center;
 }
 
 .form-footer span {
-  color: #666;
+  color: var(--text-secondary);
   margin-right: 5px;
+}
+
+.logo-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.logo-image {
+  height: 60px;
+  margin-bottom: 10px;
+}
+
+.logo-text {
+  font-size: 24px;
+  color: var(--primary-color);
+  margin: 0;
+}
+
+.form-header {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.form-header h2 {
+  margin-bottom: 10px;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.form-header p {
+  margin-bottom: 5px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.login-form, .register-form {
+  margin-top: 0;
+}
+
+.login-form .el-form-item,
+.register-form .el-form-item {
+  margin-bottom: 20px;
+}
+
+.register-form .el-form-item:last-of-type {
+  margin-bottom: 20px;
+}
+
+.decoration-header {
+  text-align: left;
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.auth-footer {
+  position: absolute;
+  bottom: 20px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  text-align: center;
 }
 
 /* 响应式调整 */
@@ -499,6 +587,7 @@ onMounted(() => {
   .auth-box {
     flex-direction: column;
     height: auto;
+    max-width: 90%;
   }
   
   .form-container, .decoration-panel {
@@ -509,7 +598,7 @@ onMounted(() => {
     position: relative;
     width: 100%;
     transform: none;
-    padding: 40px 20px;
+    padding: 30px 20px;
   }
   
   .login-panel, .register-panel, .decoration-content {
@@ -530,40 +619,11 @@ onMounted(() => {
   .decoration-panel {
     display: none;
   }
-}
-
-.form-header, .decoration-header {
-  margin-bottom: 20px;
-}
-
-.form-panel h2 {
-  margin-bottom: 10px;
-  font-size: 28px;
-  color: #333;
-}
-
-.form-panel p {
-  margin-bottom: 5px;
-  color: #666;
-  font-size: 15px;
-}
-
-.login-form, .register-form {
-  margin-top: 0;
-}
-
-.login-form .el-form-item,
-.register-form .el-form-item {
-  margin-bottom: 15px;
-}
-
-.register-form .el-form-item:last-of-type {
-  margin-bottom: 20px;
-}
-
-.decoration-header {
-  text-align: left;
-  width: 100%;
-  margin-bottom: 20px;
+  
+  .auth-footer {
+    position: relative;
+    margin-top: 20px;
+    bottom: auto;
+  }
 }
 </style> 

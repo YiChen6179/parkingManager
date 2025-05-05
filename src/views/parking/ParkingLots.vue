@@ -21,15 +21,12 @@ const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
 const formData = ref<ParkingLotVO>({
   lotName: '',
-  address: '',
-  totalSpot: 0,
-  availableSpot: 0
+  address: ''
 })
 
 const formRules = reactive<FormRules>({
   lotName: [{ required: true, message: '请输入停车场名称', trigger: 'blur' }],
-  address: [{ required: true, message: '请输入停车场地址', trigger: 'blur' }],
-  totalSpot: [{ required: true, message: '请输入总车位数', trigger: 'blur' }]
+  address: [{ required: true, message: '请输入停车场地址', trigger: 'blur' }]
 })
 
 // 获取停车场列表
@@ -62,16 +59,18 @@ const resetQuery = () => {
 const handleAdd = () => {
   formData.value = {
     lotName: '',
-    address: '',
-    totalSpot: 0,
-    availableSpot: 0
+    address: ''
   }
   dialogVisible.value = true
 }
 
 // 打开编辑对话框
 const handleEdit = (row: ParkingLotVO) => {
-  formData.value = { ...row }
+  formData.value = { 
+    id: row.id,
+    lotName: row.lotName,
+    address: row.address
+  }
   dialogVisible.value = true
 }
 
@@ -174,7 +173,7 @@ onMounted(() => {
         <el-table-column prop="lotName" label="停车场名称" min-width="120" show-overflow-tooltip />
         <el-table-column prop="address" label="地址" min-width="180" show-overflow-tooltip />
         <el-table-column prop="totalSpot" label="总车位数" width="120" align="center" />
-        <el-table-column prop="availableSpot" label="可用车位数" width="120" align="center" />
+        <el-table-column prop="usedSpot" label="当前使用数" width="120" align="center" />
         <el-table-column label="操作" width="160" align="center">
         <template #default="{ row }">
             <el-button
@@ -228,18 +227,6 @@ onMounted(() => {
         <el-form-item label="地址" prop="address">
           <el-input v-model="formData.address" placeholder="请输入停车场地址" />
         </el-form-item>
-        <el-form-item label="总车位数" prop="totalSpot">
-          <el-input-number v-model="formData.totalSpot" :min="0" :precision="0" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="可用车位数" prop="availableSpot">
-          <el-input-number
-            v-model="formData.availableSpot"
-            :min="0"
-            :max="formData.totalSpot"
-            :precision="0"
-            style="width: 100%"
-          />
-        </el-form-item>
       </el-form>
       <template #footer>
           <el-button @click="dialogVisible = false">取消</el-button>
@@ -251,7 +238,7 @@ onMounted(() => {
 
 <style scoped>
 .app-container {
-  padding: 20px;
+  padding: 0;
 }
 
 .search-card,

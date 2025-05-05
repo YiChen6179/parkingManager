@@ -27,9 +27,9 @@ const vehicleOptions = ref<{ label: string; value: number }[]>([])
 const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
 const formData = ref<ParkingRecordVO>({
-  parkingSpotId: 0,
-  vehicleId: 0,
-  status: 1, // 默认为停车中
+  parkingSpotId: undefined as unknown as number,
+  vehicleId: undefined as unknown as number,
+  status: 0, // 默认为进行中
   plateNumber: '',
   entryTime: new Date().toISOString()
 })
@@ -95,9 +95,9 @@ const resetQuery = () => {
 // 打开新增对话框
 const handleAdd = () => {
   formData.value = {
-    parkingSpotId: 0,
-    vehicleId: 0,
-    status: 1, // 默认为停车中
+    parkingSpotId: undefined as unknown as number,
+    vehicleId: undefined as unknown as number,
+    status: 0, // 默认为进行中
     plateNumber: '',
     entryTime: new Date().toISOString()
   }
@@ -107,6 +107,13 @@ const handleAdd = () => {
 // 打开编辑对话框
 const handleEdit = (row: ParkingRecordVO) => {
   formData.value = { ...row }
+  // 如果没有车牌号但有车辆ID，尝试从选项中获取车牌号
+  if (!formData.value.plateNumber && formData.value.vehicleId) {
+    const vehicle = vehicleOptions.value.find(item => item.value === formData.value.vehicleId)
+    if (vehicle) {
+      formData.value.plateNumber = vehicle.label || ''
+    }
+  }
   dialogVisible.value = true
 }
 
@@ -118,6 +125,19 @@ const submitForm = async () => {
     if (!valid) return
     
     try {
+      // 如果状态变为已完成，且没有设置出场时间，则自动设置为当前时间
+      if (formData.value.status === 1 && !formData.value.exitTime) {
+        formData.value.exitTime = new Date().toISOString()
+      }
+      
+      // 如果同时有入场和出场时间，计算停车时长
+      if (formData.value.entryTime && formData.value.exitTime) {
+        const entryTime = new Date(formData.value.entryTime).getTime()
+        const exitTime = new Date(formData.value.exitTime).getTime()
+        const diffMinutes = Math.floor((exitTime - entryTime) / (1000 * 60))
+        formData.value.parkingTime = diffMinutes > 0 ? diffMinutes : 0
+      }
+      
       if (formData.value.id) {
         // 编辑
         await updateParkingRecord(formData.value)
@@ -164,11 +184,39 @@ const handleVehicleExit = (row: ParkingRecordVO) => {
     type: 'warning'
   }).then(async () => {
     try {
+      // 调用车辆出场API
       await vehicleExit(row.id as number)
       ElMessage.success('车辆出场成功')
       getList()
     } catch (error) {
       console.error('车辆出场失败:', error)
+      // 如果后端API调用失败，也可以尝试通过前端更新状态
+      try {
+        // 创建更新对象
+        const updateData: ParkingRecordVO = {
+          id: row.id,
+          parkingSpotId: row.parkingSpotId,
+          vehicleId: row.vehicleId,
+          status: 1, // 设置为已完成
+          exitTime: new Date().toISOString() // 设置出场时间为当前时间
+        }
+        
+        // 计算停车时长
+        if (row.entryTime) {
+          const entryTime = new Date(row.entryTime).getTime()
+          const exitTime = new Date().getTime()
+          const diffMinutes = Math.floor((exitTime - entryTime) / (1000 * 60))
+          updateData.parkingTime = diffMinutes > 0 ? diffMinutes : 0
+        }
+        
+        // 调用更新API
+        await updateParkingRecord(updateData)
+        ElMessage.success('车辆出场成功（通过更新记录）')
+        getList()
+      } catch (updateError) {
+        console.error('通过更新记录设置车辆出场失败:', updateError)
+        ElMessage.error('车辆出场失败，请重试或手动编辑记录')
+      }
     }
   }).catch(() => {})
 }
@@ -199,12 +247,12 @@ const getPlateNumber = (vehicleId: number) => {
 
 // 获取状态文本
 const getStatusText = (status: number) => {
-  return status === 0 ? '已完成' : '停车中'
+  return status === 1 ? '已完成' : '进行中'
 }
 
 // 获取状态类型
 const getStatusType = (status: number) => {
-  return status === 0 ? 'info' : 'primary'
+  return status === 1 ? 'info' : 'primary'
 }
 
 // 格式化时间
@@ -224,6 +272,18 @@ const formatParkingTime = (minutes: number | undefined) => {
     return `${hours}小时${remainingMinutes}分钟`
   } else {
     return `${remainingMinutes}分钟`
+  }
+}
+
+// 车辆选择变化处理
+const handleVehicleChange = (value: number) => {
+  if (value) {
+    const vehicle = vehicleOptions.value.find(item => item.value === value)
+    if (vehicle) {
+      formData.value.plateNumber = vehicle.label || ''
+    }
+  } else {
+    formData.value.plateNumber = ''
   }
 }
 
@@ -261,8 +321,8 @@ onMounted(() => {
             clearable
             style="width: 120px"
           >
-            <el-option label="停车中" :value="1" />
-            <el-option label="已完成" :value="0" />
+            <el-option label="进行中" :value="0" />
+            <el-option label="已完成" :value="1" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -299,8 +359,8 @@ onMounted(() => {
         </el-table-column>
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status || 1)">
-              {{ getStatusText(row.status || 1) }}
+            <el-tag :type="getStatusType(row.status || 0)">
+              {{ getStatusText(row.status || 0) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -322,7 +382,7 @@ onMounted(() => {
         <el-table-column label="操作" width="200" align="center">
           <template #default="{ row }">
             <el-button
-              v-if="row.status === 1"
+              v-if="row.status === 0"
               type="success"
               link
               @click="handleVehicleExit(row)"
@@ -393,6 +453,7 @@ onMounted(() => {
             v-model="formData.vehicleId"
             placeholder="请选择车辆"
             style="width: 100%"
+            @change="handleVehicleChange"
           >
             <el-option
               v-for="item in vehicleOptions"
@@ -401,9 +462,6 @@ onMounted(() => {
               :value="item.value"
             />
           </el-select>
-        </el-form-item>
-        <el-form-item label="车牌号" prop="plateNumber">
-          <el-input v-model="formData.plateNumber" placeholder="请输入车牌号，非必填" />
         </el-form-item>
         <el-form-item label="入场时间" prop="entryTime">
           <el-date-picker
@@ -423,8 +481,8 @@ onMounted(() => {
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-select v-model="formData.status" style="width: 100%">
-            <el-option label="停车中" :value="1" />
-            <el-option label="已完成" :value="0" />
+            <el-option label="进行中" :value="0" />
+            <el-option label="已完成" :value="1" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -438,7 +496,7 @@ onMounted(() => {
 
 <style scoped>
 .app-container {
-  padding: 20px;
+  padding: 0;
 }
 
 .search-card,

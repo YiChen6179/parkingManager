@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+import './style.css'  // 确保在Element Plus样式之后引入
 import App from './App.vue'
 import router from './router'
 import authUtils from './utils/auth'

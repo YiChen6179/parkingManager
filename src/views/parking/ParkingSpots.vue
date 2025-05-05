@@ -29,12 +29,16 @@ const selectedLotId = ref<number | undefined>(undefined)
 const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
 const formData = ref<ParkingSpotVO>({
-  parkingZoneId: 0,
+  parkingZoneId: undefined as unknown as number,
   status: 0,
   spotNumber: '',
-  length: 0,
-  width: 0
+  length: undefined,
+  width: undefined
 })
+
+// 当前选择的停车区前缀
+const selectedZonePrefix = ref('')
+const userInputSpotNumber = ref('')
 
 const formRules = reactive<FormRules>({
   parkingZoneId: [{ required: true, message: '请选择所属停车区', trigger: 'change' }],
@@ -94,8 +98,67 @@ const handleLotChange = (value: number) => {
   queryParams.zoneId = undefined
 }
 
+// 停车区选择变化处理
+const handleParkingZoneChange = (value: number) => {
+  if (value) {
+    const zone = parkingZoneOptions.value.find(item => item.value === value)
+    if (zone) {
+      // 从停车区名称中提取前缀（假设格式如"A区"，取第一个字符作为前缀）
+      const prefix = zone.label.charAt(0)
+      selectedZonePrefix.value = prefix
+      
+      // 如果用户已输入编号，则更新完整车位编号
+      if (userInputSpotNumber.value) {
+        formData.value.spotNumber = `${prefix}-${userInputSpotNumber.value}`
+      } else {
+        formData.value.spotNumber = ''
+      }
+    }
+  } else {
+    selectedZonePrefix.value = ''
+    formData.value.spotNumber = userInputSpotNumber.value
+  }
+}
+
+// 处理车位编号输入，自动添加前缀
+const handleSpotNumberInput = (value: string) => {
+  // 保存用户输入的原始值
+  userInputSpotNumber.value = value
+  
+  // 如果有选择停车区，且有前缀，则添加前缀
+  if (selectedZonePrefix.value) {
+    // 如果用户输入的值已经包含前缀，则不重复添加
+    if (value.startsWith(`${selectedZonePrefix.value}-`)) {
+      formData.value.spotNumber = value
+    } else {
+      // 检查用户输入是否已经包含"-"
+      const parts = value.split('-')
+      if (parts.length > 1 && parts[0] === selectedZonePrefix.value) {
+        // 已经是正确格式，不做处理
+        formData.value.spotNumber = value
+      } else {
+        // 移除可能存在的前缀
+        let cleanNumber = value
+        if (value.includes('-')) {
+          cleanNumber = value.split('-').pop() || value
+        }
+        formData.value.spotNumber = `${selectedZonePrefix.value}-${cleanNumber}`
+      }
+    }
+  } else {
+    // 没有选择停车区，保持原值
+    formData.value.spotNumber = value
+  }
+}
+
 // 搜索
 const handleSearch = () => {
+  // 如果是使用前缀输入的，需要更新查询参数
+  if (selectedZonePrefix.value && userInputSpotNumber.value) {
+    queryParams.spotNumber = `${selectedZonePrefix.value}-${userInputSpotNumber.value}`
+  } else {
+    queryParams.spotNumber = userInputSpotNumber.value
+  }
   queryParams.current = 1
   getList()
 }
@@ -103,27 +166,42 @@ const handleSearch = () => {
 // 重置搜索
 const resetQuery = () => {
   queryParams.spotNumber = ''
+  userInputSpotNumber.value = ''
   queryParams.status = undefined
   queryParams.zoneId = undefined
   selectedLotId.value = undefined
+  selectedZonePrefix.value = ''
   handleSearch()
 }
 
 // 打开新增对话框
 const handleAdd = () => {
   formData.value = {
-    parkingZoneId: 0,
+    parkingZoneId: undefined as unknown as number,
     status: 0,
     spotNumber: '',
-    length: 5,
+    length: 5.5,
     width: 2.5
   }
+  userInputSpotNumber.value = ''
+  selectedZonePrefix.value = ''
   dialogVisible.value = true
 }
 
 // 打开编辑对话框
 const handleEdit = (row: ParkingSpotVO) => {
   formData.value = { ...row }
+  
+  // 解析现有车位编号，提取前缀和用户输入部分
+  if (row.spotNumber && row.spotNumber.includes('-')) {
+    const parts = row.spotNumber.split('-')
+    selectedZonePrefix.value = parts[0]
+    userInputSpotNumber.value = parts.slice(1).join('-')
+  } else {
+    selectedZonePrefix.value = ''
+    userInputSpotNumber.value = row.spotNumber
+  }
+  
   dialogVisible.value = true
 }
 
@@ -233,6 +311,7 @@ onMounted(() => {
             placeholder="请选择停车区"
             clearable
             style="width: 180px"
+            @change="handleParkingZoneChange"
           >
             <el-option
               v-for="item in selectedLotId ? getZonesByLotId(selectedLotId) : parkingZoneOptions"
@@ -243,12 +322,16 @@ onMounted(() => {
           </el-select>
         </el-form-item>
         <el-form-item label="车位编号">
-          <el-input
-            v-model="queryParams.spotNumber"
-            placeholder="请输入车位编号"
-            clearable
-            @keyup.enter="handleSearch"
-          />
+          <div class="spot-number-input">
+            <span v-if="selectedZonePrefix" class="prefix">{{ selectedZonePrefix }}-</span>
+            <el-input
+              v-model="userInputSpotNumber"
+              :placeholder="selectedZonePrefix ? '请输入车位号码' : '请输入车位编号'"
+              clearable
+              @keyup.enter="handleSearch"
+              @input="handleSpotNumberInput"
+            />
+          </div>
         </el-form-item>
         <el-form-item label="状态">
           <el-select
@@ -353,6 +436,7 @@ onMounted(() => {
             v-model="formData.parkingZoneId"
             placeholder="请选择停车区"
             style="width: 100%"
+            @change="handleParkingZoneChange"
           >
             <el-option
               v-for="item in parkingZoneOptions"
@@ -363,7 +447,14 @@ onMounted(() => {
           </el-select>
         </el-form-item>
         <el-form-item label="车位编号" prop="spotNumber">
-          <el-input v-model="formData.spotNumber" placeholder="请输入车位编号，如：A1-01" />
+          <div class="spot-number-input">
+            <span v-if="selectedZonePrefix" class="prefix">{{ selectedZonePrefix }}-</span>
+            <el-input 
+              v-model="userInputSpotNumber" 
+              :placeholder="selectedZonePrefix ? '请输入车位号码' : '请输入车位编号'"
+              @input="handleSpotNumberInput"
+            />
+          </div>
         </el-form-item>
         <el-form-item label="车位状态" prop="status">
           <el-select v-model="formData.status" style="width: 100%">
@@ -388,7 +479,7 @@ onMounted(() => {
 
 <style scoped>
 .app-container {
-  padding: 20px;
+  padding: 0;
 }
 
 .search-card,
@@ -412,5 +503,30 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+.spot-number-input {
+  display: flex;
+  align-items: center;
+}
+
+.prefix {
+  margin-right: 5px;
+  padding: 0 5px;
+  height: 32px;
+  line-height: 32px;
+  background-color: #f5f7fa;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px 0 0 4px;
+  color: #606266;
+}
+
+.spot-number-input .el-input {
+  flex: 1;
+}
+
+.spot-number-input .el-input input {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }
 </style> 

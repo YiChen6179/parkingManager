@@ -6,7 +6,7 @@ export interface ParkingRecordVO {
   entryTime?: string;
   exitTime?: string;
   parkingTime?: number;
-  status?: number; // 0-已完成，1-停车中
+  status?: number; // 0-进行中，1-已完成
   plateNumber?: string;
   vehicleId: number;
 }

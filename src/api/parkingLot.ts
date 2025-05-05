@@ -4,8 +4,8 @@ export interface ParkingLotVO {
   id?: number;
   lotName: string;
   address: string;
-  totalSpot?: number;
-  availableSpot?: number;
+  readonly totalSpot?: number;
+  readonly usedSpot?: number;
 }
 
 export interface QueryParams {

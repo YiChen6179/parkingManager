@@ -190,6 +190,10 @@ const getStatusTag = (status: string) => {
 </template>
 
 <style scoped>
+.app-container {
+  padding: 0;
+}
+
 .parking-spaces {
   background-color: #fff;
   padding: 20px;

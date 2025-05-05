@@ -12,6 +12,7 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
+  background: linear-gradient(135deg, #3a7bd5 0%, #9d50bb 100%);
 }
 
 #app {

@@ -31,6 +31,8 @@ export const ROUTE_NAMES = {
   PARKING_ZONES: 'parking-zones',
   PARKING_SPOTS: 'parking-spots',
   PARKING_RECORDS: 'parking-records',
+  SPOT_MONITOR: 'spot-monitor',
+  DATA_ANALYSIS: 'data-analysis',
   USERS: 'users',
   VEHICLES: 'vehicles',
   NOT_FOUND: 'not-found'
@@ -45,6 +47,8 @@ export const ROUTE_PATHS = {
   PARKING_ZONES: '/parking-zones',
   PARKING_SPOTS: '/parking-spots',
   PARKING_RECORDS: '/parking-records',
+  SPOT_MONITOR: '/spot-monitor',
+  DATA_ANALYSIS: '/data-analysis',
   USERS: '/users',
   VEHICLES: '/vehicles'
 };

@@ -1,11 +1,42 @@
 :root {
+  /* 主色调 */
+  --primary-color: #3a7bd5;
+  --primary-hover: #2d6bc7;
+  --primary-light: #e8f0fd;
+  
+  /* 辅助色调 */
+  --secondary-color: #9d50bb;
+  --gradient-bg: linear-gradient(135deg, #3a7bd5 0%, #9d50bb 100%);
+  
+  /* 文字颜色 */
+  --text-primary: #303133;
+  --text-regular: #606266;
+  --text-secondary: #909399;
+  
+  /* 边框颜色 */
+  --border-color: #dcdfe6;
+  --border-light: #e4e7ed;
+  
+  /* 成功、警告、危险色 */
+  --success-color: #67c23a;
+  --warning-color: #e6a23c;
+  --danger-color: #f56c6c;
+  
+  /* 背景色 */
+  --bg-color: #f5f7fa;
+  --card-bg: #ffffff;
+  
+  /* 阴影 */
+  --box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  --box-shadow-light: 0 2px 4px rgba(0, 0, 0, 0.12);
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: var(--text-primary);
+  background-color: var(--bg-color);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -24,10 +55,11 @@ a:hover {
 
 body {
   margin: 0;
-  min-width: 320px;
+  padding: 0;
+  color: var(--text-primary);
+  background-image: var(--gradient-bg);
   min-height: 100vh;
-  height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 h1 {
@@ -55,7 +87,11 @@ button:focus-visible {
 }
 
 .card {
-  padding: 2em;
+  background: var(--card-bg);
+  border-radius: 4px;
+  box-shadow: var(--box-shadow);
+  padding: 20px;
+  margin-bottom: 20px;
 }
 
 #app {
@@ -65,12 +101,134 @@ button:focus-visible {
   text-align: center;
   height: 100%;
   overflow: hidden;
+  width: 100%;
+}
+
+.app-container {
+  width: 100%;
+  min-height: 100vh;
+  padding: 15px !important;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* 仪表盘页面特殊内边距 */
+.dashboard-page .app-container {
+  padding: 10px !important;
+}
+
+.dashboard-page .dashboard-container {
+  padding: 10px !important;
+}
+
+/* 页面标题样式 */
+.page-title {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+}
+
+/* 数据卡片样式 */
+.data-card {
+  background: var(--card-bg);
+  border-radius: 4px;
+  box-shadow: var(--box-shadow-light);
+  padding: 20px;
+  height: 100%;
+  transition: all 0.3s;
+}
+
+.data-card:hover {
+  box-shadow: var(--box-shadow);
+  transform: translateY(-2px);
+}
+
+.data-card .label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.data-card .value {
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.data-card .value.success {
+  color: var(--success-color);
+}
+
+.data-card .value.primary {
+  color: var(--primary-color);
+}
+
+.data-card .value.warning {
+  color: var(--warning-color);
+}
+
+/* 表单样式增强 */
+.el-form-item.is-required .el-form-item__label:before {
+  color: var(--danger-color);
+}
+
+.el-button--primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.el-button--primary:hover,
+.el-button--primary:focus {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* 自定义渐变按钮 */
+.gradient-button {
+  background-image: var(--gradient-bg);
+  border: none;
+  color: white;
+  transition: all 0.3s;
+}
+
+.gradient-button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* 登录页面特殊样式 */
+.auth-container {
+  background-image: var(--gradient-bg);
+}
+
+/* 增强布局样式 */
+.main-layout .aside {
+  background-color: #304156;
+}
+
+.main-layout .header {
+  background-color: white;
+}
+
+.main-layout .main {
+  padding: 0;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .card, .data-card {
+    padding: 15px;
+  }
+  
+  .data-card .value {
+    font-size: 24px;
+  }
 }
 
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
-    background-color: #ffffff;
   }
   a:hover {
     color: #747bff;
@@ -78,4 +236,112 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+.search-card,
+.action-card {
+  margin-bottom: 20px;
+  padding: 15px;
+}
+
+/* 搜索卡片样式优化 */
+.search-card {
+  padding: 10px;
+}
+
+.search-card .el-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.search-card .el-form-item {
+  margin-bottom: 2px;
+  margin-right: 10px;
+  margin-top: 2px;
+}
+
+.search-card .el-form-item__label {
+  padding-bottom: 0;
+  line-height: 32px;
+  height: 32px;
+}
+
+.search-card .el-form-item:last-child {
+  margin-right: 0;
+}
+
+.search-card .el-form-item__content {
+  line-height: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+/* 确保按钮组紧凑 */
+.search-card .el-button + .el-button {
+  margin-left: 8px;
+}
+
+/* 响应式搜索卡片 */
+@media (max-width: 768px) {
+  .search-card .el-form {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .search-card .el-form-item {
+    margin-right: 0;
+    width: 100%;
+  }
+  
+  .search-card .el-form-item__content {
+    width: 100%;
+  }
+}
+
+/* 卡片内容区域内边距优化 */
+.el-card__body {
+  padding: 10px 15px !important;
+}
+
+.search-card .el-card__body {
+  padding: 3px 10px !important;
+}
+
+.action-card .el-card__body {
+  padding: 10px !important;
+}
+
+/* 搜索框内元素高度调整 */
+.search-card .el-input__wrapper {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.search-card .el-input__inner {
+  min-height: 32px;
+  height: 32px;
+  line-height: 32px;
+}
+
+.search-card .el-button {
+  height: 32px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.search-card .el-select {
+  width: 180px;
+}
+
+.search-card .el-select .el-input__wrapper {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.search-card .el-select .el-input__inner {
+  height: 32px;
+  line-height: 32px;
 }

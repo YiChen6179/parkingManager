@@ -25,7 +25,7 @@ const userOptions = ref<{ label: string; value: number }[]>([])
 const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
 const formData = ref<VehicleVO>({
-  userId: 0,
+  userId: undefined as unknown as number,
   plateNumber: '',
   vehicleType: '',
   vehicleColor: ''
@@ -85,7 +85,7 @@ const resetQuery = () => {
 // 打开新增对话框
 const handleAdd = () => {
   formData.value = {
-    userId: 0,
+    userId: undefined as unknown as number,
     plateNumber: '',
     vehicleType: '',
     vehicleColor: ''
@@ -300,7 +300,7 @@ onMounted(() => {
 
 <style scoped>
 .app-container {
-  padding: 20px;
+  padding: 0;
 }
 
 .search-card,

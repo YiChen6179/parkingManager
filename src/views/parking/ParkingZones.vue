@@ -26,7 +26,7 @@ const loadingParkingLots = ref(false)
 const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
 const formData = ref<ParkingZoneVO>({
-  parkingLotId: 0,
+  parkingLotId: undefined as unknown as number,
   zoneName: '',
   floor: ''
 })
@@ -82,7 +82,7 @@ const resetQuery = () => {
 // 打开新增对话框
 const handleAdd = () => {
   formData.value = {
-    parkingLotId: 0,
+    parkingLotId: undefined as unknown as number,
     zoneName: '',
     floor: ''
   }
@@ -298,7 +298,7 @@ onMounted(() => {
 
 <style scoped>
 .app-container {
-  padding: 20px;
+  padding: 0;
 }
 
 .search-card,

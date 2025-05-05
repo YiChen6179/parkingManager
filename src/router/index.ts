@@ -60,6 +60,20 @@ const router = createRouter({
           component: () => import('../views/parking/ParkingSpots.vue'),
           meta: { title: '停车位管理', requiresAuth: true }
         },
+        // 停车位实时监控
+        {
+          path: ROUTE_PATHS.SPOT_MONITOR,
+          name: ROUTE_NAMES.SPOT_MONITOR,
+          component: () => import('../views/parking/SpotMonitor.vue'),
+          meta: { title: '停车位监控', requiresAuth: true }
+        },
+        // 数据统计分析
+        {
+          path: ROUTE_PATHS.DATA_ANALYSIS,
+          name: ROUTE_NAMES.DATA_ANALYSIS,
+          component: () => import('../views/statistics/DataAnalysis.vue'),
+          meta: { title: '数据分析', requiresAuth: true }
+        },
         // 停车记录管理
         {
           path: ROUTE_PATHS.PARKING_RECORDS,
@@ -89,8 +103,8 @@ const router = createRouter({
       name: ROUTE_NAMES.NOT_FOUND,
       component: () => import('../views/NotFound.vue'),
       meta: { title: '页面不存在', requiresAuth: false }
-    }
-  ]
+        }
+      ]
 })
 
 // 在应用启动时初始化认证状态
