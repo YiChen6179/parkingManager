@@ -1,35 +1,109 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { Odometer, User, LocationInformation, Box, Share, SetUp, Van } from '@element-plus/icons-vue'
+import axios from 'axios'
+import authUtils from '@/utils/auth'
+
+interface ParkingLot {
+  id: number
+  lotName: string
+  totalSpot: number
+  usedSpot: number
+}
+
+interface ParkingRecord {
+  id: number
+  entryTime: string
+  exitTime: string | null
+  plateNumber: string
+}
+
+interface DashboardData {
+  totalParkingLots: number
+  totalParkingSpots: number
+  currentUsedSpots: number
+  registeredVehicles: number
+  parkingLotOccupancies: ParkingLot[]
+  recentParkingRecords: ParkingRecord[]
+}
 
 // 数据统计
 const stats = ref([
-  { id: 1, label: '总停车场数', value: 5, icon: Box, color: '#3a7bd5' },
-  { id: 2, label: '总车位数', value: 500, icon: LocationInformation, color: '#00d2ff' },
-  { id: 3, label: '当前使用数', value: 320, icon: LocationInformation, color: '#e6a23c' },
-  { id: 4, label: '注册车辆数', value: 278, icon: Van, color: '#67c23a' }
+  { id: 1, label: '总停车场数', value: 0, icon: Box, color: '#3a7bd5' },
+  { id: 2, label: '总车位数', value: 0, icon: LocationInformation, color: '#00d2ff' },
+  { id: 3, label: '当前使用数', value: 0, icon: LocationInformation, color: '#e6a23c' },
+  { id: 4, label: '注册车辆数', value: 0, icon: Van, color: '#67c23a' }
 ])
 
 // 最近停车记录
-const parkingRecords = ref([
-  { id: 1, time: '10:30', plateNumber: '京A12345', action: '入场', location: '停车场A', status: 'success' },
-  { id: 2, time: '09:15', plateNumber: '京B67890', action: '出场', location: '停车场B', status: 'info' },
-  { id: 3, time: '08:45', plateNumber: '京C54321', action: '入场', location: '停车场A', status: 'success' },
-  { id: 4, time: '昨天', plateNumber: '京D98765', action: '出场', location: '停车场C', status: 'info' },
-  { id: 5, time: '昨天', plateNumber: '京E13579', action: '入场', location: '停车场B', status: 'success' }
-])
+const parkingRecords = ref<Array<{
+  id: number
+  time: string
+  plateNumber: string
+  action: string
+  location: string
+  status: string
+}>>([])
 
 // 停车场占用率数据
-const parkingLots = ref([
-  { id: 1, name: '停车场A', capacity: 100, occupied: 75, available: 25, status: 'active' },
-  { id: 2, name: '停车场B', capacity: 150, occupied: 120, available: 30, status: 'active' },
-  { id: 3, name: '停车场C', capacity: 80, occupied: 50, available: 30, status: 'maintenance' },
-  { id: 4, name: '停车场D', capacity: 120, occupied: 90, available: 30, status: 'active' },
-  { id: 5, name: '停车场E', capacity: 50, occupied: 35, available: 15, status: 'active' }
-])
+const parkingLots = ref<Array<{
+  id: number
+  name: string
+  capacity: number
+  occupied: number
+  available: number
+  status: string
+}>>([])
+
+// 获取仪表盘数据
+const fetchDashboardData = async () => {
+  try {
+    const token = authUtils.getToken();
+    const response = await axios.get<{ data: DashboardData }>('/api/dashboard', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    const data = response.data.data
+    
+    // 更新统计数据
+    stats.value[0].value = data.totalParkingLots
+    stats.value[1].value = data.totalParkingSpots
+    stats.value[2].value = data.currentUsedSpots
+    stats.value[3].value = data.registeredVehicles
+    
+    // 更新停车场占用率数据
+    parkingLots.value = data.parkingLotOccupancies.map((lot: ParkingLot) => ({
+      id: lot.id,
+      name: lot.lotName,
+      capacity: lot.totalSpot,
+      occupied: lot.usedSpot,
+      available: lot.totalSpot - lot.usedSpot,
+      status: 'active'
+    }))
+    
+    // 更新最近停车记录
+    parkingRecords.value = data.recentParkingRecords.map((record: ParkingRecord) => ({
+      id: record.id,
+      time: new Date(record.entryTime).toLocaleTimeString(),
+      plateNumber: record.plateNumber,
+      action: record.exitTime ? '出场' : '入场',
+      location: '停车场',
+      status: record.exitTime ? 'info' : 'success'
+    }))
+  } catch (error) {
+    console.error('获取仪表盘数据失败:', error)
+  }
+}
+
+// 刷新数据
+const refreshData = () => {
+  fetchDashboardData()
+}
 
 onMounted(() => {
   document.title = '首页 - 停车场管理系统'
+  fetchDashboardData()
 })
 </script>
 
@@ -38,8 +112,7 @@ onMounted(() => {
     <div class="page-header">
       <h1 class="page-title">仪表盘</h1>
       <div class="page-actions">
-        <el-button type="primary" size="default">系统状态</el-button>
-        <el-button class="gradient-button">刷新数据</el-button>
+        <el-button type="primary" @click="refreshData">刷新数据</el-button>
       </div>
     </div>
 
@@ -50,7 +123,7 @@ onMounted(() => {
           <div class="stats-info">
             <div class="stats-label">{{ item.label }}</div>
             <div class="stats-value">{{ item.value }}</div>
-          </div>
+            </div>
           <div class="stats-icon" :style="{ backgroundColor: item.color }">
             <el-icon><component :is="item.icon" /></el-icon>
           </div>
@@ -62,7 +135,7 @@ onMounted(() => {
     <div class="main-content">
       <div class="main-section">
         <div class="card parking-status">
-          <div class="card-header">
+            <div class="card-header">
             <h3>停车场占用率</h3>
             <el-button text>查看全部</el-button>
           </div>
@@ -95,7 +168,7 @@ onMounted(() => {
       
       <div class="side-section">
         <div class="card recent-records">
-          <div class="card-header">
+            <div class="card-header">
             <h3>最近停车记录</h3>
             <el-button text>查看全部</el-button>
           </div>
@@ -115,7 +188,7 @@ onMounted(() => {
                     <span class="plate-number">{{ record.plateNumber }}</span>
                     {{ record.action === '入场' ? '已进入' : '已离开' }}{{ record.location }}
                   </p>
-                </div>
+            </div>
               </el-timeline-item>
             </el-timeline>
           </div>
@@ -359,8 +432,8 @@ onMounted(() => {
 @media (max-width: 1400px) {
   .stats-container {
     gap: 25px;
-  }
-  
+}
+
   .main-content {
     gap: 25px;
   }
@@ -458,8 +531,8 @@ onMounted(() => {
     width: 55px;
     height: 55px;
     border-radius: 12px;
-  }
-  
+}
+
   .stats-icon .el-icon {
     font-size: 28px;
   }

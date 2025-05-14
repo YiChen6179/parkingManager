@@ -5,6 +5,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { ParkingRecordVO, addParkingRecord, updateParkingRecord, getParkingRecordList, deleteParkingRecord, vehicleExit } from '@/api/parkingRecord'
 import { getParkingSpotList } from '@/api/parkingSpot'
 import { getVehicleList } from '@/api/vehicle'
+import ParkingRecordForm from './components/ParkingRecordForm.vue'
 
 // 查询参数
 const queryParams = reactive({
@@ -61,6 +62,7 @@ const getParkingSpots = async () => {
       label: item.spotNumber,
       value: item.id as number
     }))
+    console.log('已加载停车位选项:', parkingSpotOptions.value)
   } catch (error) {
     console.error('获取停车位列表失败:', error)
   }
@@ -117,42 +119,9 @@ const handleEdit = (row: ParkingRecordVO) => {
   dialogVisible.value = true
 }
 
-// 提交表单
-const submitForm = async () => {
-  if (!formRef.value) return
-  
-  await formRef.value.validate(async (valid) => {
-    if (!valid) return
-    
-    try {
-      // 如果状态变为已完成，且没有设置出场时间，则自动设置为当前时间
-      if (formData.value.status === 1 && !formData.value.exitTime) {
-        formData.value.exitTime = new Date().toISOString()
-      }
-      
-      // 如果同时有入场和出场时间，计算停车时长
-      if (formData.value.entryTime && formData.value.exitTime) {
-        const entryTime = new Date(formData.value.entryTime).getTime()
-        const exitTime = new Date(formData.value.exitTime).getTime()
-        const diffMinutes = Math.floor((exitTime - entryTime) / (1000 * 60))
-        formData.value.parkingTime = diffMinutes > 0 ? diffMinutes : 0
-      }
-      
-      if (formData.value.id) {
-        // 编辑
-        await updateParkingRecord(formData.value)
-        ElMessage.success('更新成功')
-      } else {
-        // 新增
-        await addParkingRecord(formData.value)
-        ElMessage.success('添加成功')
-      }
-      dialogVisible.value = false
-      getList()
-    } catch (error) {
-      console.error('提交失败:', error)
-    }
-  })
+// 表单提交成功回调
+const handleFormSuccess = () => {
+  getList()
 }
 
 // 删除停车记录
@@ -422,75 +391,13 @@ onMounted(() => {
     </el-card>
 
     <!-- 表单对话框 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="formData.id ? '编辑停车记录' : '新增停车记录'"
-      width="500px"
-      @closed="formRef?.resetFields()"
-    >
-      <el-form
-        ref="formRef"
-        :model="formData"
-        :rules="formRules"
-        label-width="100px"
-      >
-        <el-form-item label="停车位" prop="parkingSpotId">
-          <el-select
-            v-model="formData.parkingSpotId"
-            placeholder="请选择停车位"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="item in parkingSpotOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="车辆" prop="vehicleId">
-          <el-select
-            v-model="formData.vehicleId"
-            placeholder="请选择车辆"
-            style="width: 100%"
-            @change="handleVehicleChange"
-          >
-            <el-option
-              v-for="item in vehicleOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="入场时间" prop="entryTime">
-          <el-date-picker
-            v-model="formData.entryTime"
-            type="datetime"
-            placeholder="请选择入场时间"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item v-if="formData.id" label="出场时间" prop="exitTime">
-          <el-date-picker
-            v-model="formData.exitTime"
-            type="datetime"
-            placeholder="请选择出场时间"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="formData.status" style="width: 100%">
-            <el-option label="进行中" :value="0" />
-            <el-option label="已完成" :value="1" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm">确定</el-button>
-      </template>
-    </el-dialog>
+    <ParkingRecordForm
+      v-model:visible="dialogVisible"
+      :form-data="formData"
+      :parking-spot-options="parkingSpotOptions"
+      :vehicle-options="vehicleOptions"
+      @success="handleFormSuccess"
+    />
   </div>
 </template>
 

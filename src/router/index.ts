@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import authUtils from '@/utils/auth'
 import { ROUTE_PATHS, ROUTE_NAMES } from '@/constants'
+import { STORAGE_KEYS } from '@/constants'
 
 // 定义路由元数据类型
 interface RouteMeta {
@@ -114,13 +115,19 @@ authUtils.initializeAuth();
 router.beforeEach((to, from, next) => {
   console.log(`路由变化: 从 ${from.path} 到 ${to.path}`);
   
+  // 检查存储中的登录状态和token
+  const localLoggedIn = localStorage.getItem(STORAGE_KEYS.IS_LOGGED_IN) === 'true';
+  const sessionLoggedIn = sessionStorage.getItem(STORAGE_KEYS.IS_LOGGED_IN) === 'true';
+  const localToken = !!localStorage.getItem(STORAGE_KEYS.TOKEN);
+  const sessionToken = !!sessionStorage.getItem(STORAGE_KEYS.TOKEN);
+  
   // 判断页面是否需要认证
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth !== false);
   
   // 使用认证工具检查登录状态
   const isAuthenticated = authUtils.checkIsLoggedIn();
   
-  console.log(`路由守卫: 路径=${to.path}, 需要认证=${requiresAuth}, 认证状态=${isAuthenticated}`);
+  console.log(`路由守卫: 路径=${to.path}, localStorage登录=${localLoggedIn}, sessionStorage登录=${sessionLoggedIn}, localToken=${localToken}, sessionToken=${sessionToken}, 认证状态=${isAuthenticated}`);
   
   // 处理根路径
   if (to.path === ROUTE_PATHS.ROOT) {

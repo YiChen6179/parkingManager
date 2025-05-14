@@ -58,4 +58,16 @@ export function deleteParkingSpot(id: number) {
     url: `/api/parking-spot/${id}`,
     method: 'delete'
   });
+}
+
+// 根据停车场名称获取停车位列表
+export function getParkingSpotsByLotName(parkingLotName: string, status: number = 0) {
+  return request({
+    url: '/api/parking-spot/listByParkingLot',
+    method: 'post',
+    params: {
+      parkingLotName,
+      status
+    }
+  });
 } 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { 
+import {
   Odometer, 
   User, 
   List, 
@@ -15,6 +15,7 @@ import {
   ArrowRight
 } from '@element-plus/icons-vue'
 import { useAuth } from '@/hooks'
+import { STORAGE_KEYS } from '@/constants'
 
 const router = useRouter()
 const activeMenu = computed(() => router.currentRoute.value.path)
@@ -24,7 +25,7 @@ const isCollapse = ref(false)
 const isDashboardPage = computed(() => router.currentRoute.value.path === '/dashboard')
 
 // 使用认证hook
-const { currentUser, handleLogout, checkAuthAndRedirect } = useAuth()
+const { currentUser, handleLogout, checkAuthAndRedirect, isLoggedIn } = useAuth()
 
 // 计算用户名显示
 const username = computed(() => {
@@ -34,15 +35,33 @@ const username = computed(() => {
 // 定期检查登录状态
 let checkInterval: number | null = null
 
+// 检查登录状态的函数，不会导致登录状态丢失
+const checkLoginStatus = () => {
+  // 检查存储中是否有token和登录状态
+  const localToken = localStorage.getItem(STORAGE_KEYS.TOKEN);
+  const sessionToken = sessionStorage.getItem(STORAGE_KEYS.TOKEN);
+  const localLoggedIn = localStorage.getItem(STORAGE_KEYS.IS_LOGGED_IN) === 'true';
+  const sessionLoggedIn = sessionStorage.getItem(STORAGE_KEYS.IS_LOGGED_IN) === 'true';
+  
+  console.log('定期检查 - localStorage登录:', localLoggedIn, 'token:', !!localToken);
+  console.log('定期检查 - sessionStorage登录:', sessionLoggedIn, 'token:', !!sessionToken);
+  
+  // 只有当确认没有登录状态时才重定向到登录页
+  if (!localLoggedIn && !sessionLoggedIn && !localToken && !sessionToken && !isLoggedIn.value) {
+    console.log('检测到未登录状态，将重定向到登录页');
+    router.push('/auth');
+  }
+};
+
 onMounted(() => {
   console.log('MainLayout组件挂载');
   
-  // 初始检查登录状态
-  checkAuthAndRedirect();
+  // 初始检查登录状态，但不强制重定向
+  checkLoginStatus();
   
   // 设置定期检查（每30秒）
   checkInterval = window.setInterval(() => {
-    checkAuthAndRedirect();
+    checkLoginStatus();
   }, 30000);
 });
 
@@ -56,7 +75,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="main-layout" :class="{ 'dashboard-page': isDashboardPage }">
-    <el-container class="layout-container">
+  <el-container class="layout-container">
       <!-- 侧边栏 -->
       <el-aside width="auto" class="aside">
         <div class="logo-container">
@@ -64,27 +83,27 @@ onBeforeUnmount(() => {
           <h1 class="logo-small" v-else>停</h1>
         </div>
         
-        <el-menu
+      <el-menu
           :default-active="activeMenu"
           class="menu"
-          :collapse="isCollapse"
+        :collapse="isCollapse"
           :collapse-transition="false"
           router
           background-color="#304156"
           text-color="#bfcbd9"
           active-text-color="#ffffff"
-        >
-          <el-menu-item index="/dashboard">
+      >
+        <el-menu-item index="/dashboard">
             <el-icon><Menu /></el-icon>
-            <template #title>首页</template>
-          </el-menu-item>
+          <template #title>首页</template>
+        </el-menu-item>
           
           <el-sub-menu index="1">
             <template #title>
               <el-icon><Box /></el-icon>
               <span>停车场管理</span>
             </template>
-            <el-menu-item index="/parking-lots">
+        <el-menu-item index="/parking-lots">
               <el-icon><List /></el-icon>
               <span>停车场列表</span>
             </el-menu-item>
@@ -95,38 +114,38 @@ onBeforeUnmount(() => {
             <el-menu-item index="/parking-spots">
               <el-icon><SetUp /></el-icon>
               <span>停车位管理</span>
-            </el-menu-item>
+        </el-menu-item>
           </el-sub-menu>
           
           <el-menu-item index="/parking-records">
             <el-icon><Odometer /></el-icon>
             <template #title>停车记录</template>
-          </el-menu-item>
+        </el-menu-item>
           
           <el-menu-item index="/vehicles">
             <el-icon><LocationInformation /></el-icon>
             <template #title>车辆管理</template>
-          </el-menu-item>
+        </el-menu-item>
           
           <el-menu-item index="/users">
             <el-icon><User /></el-icon>
             <template #title>用户管理</template>
-          </el-menu-item>
-        </el-menu>
+        </el-menu-item>
+      </el-menu>
         
         <div class="collapse-btn" @click="isCollapse = !isCollapse">
           <el-icon v-if="isCollapse"><ArrowRight /></el-icon>
           <el-icon v-else><ArrowLeft /></el-icon>
         </div>
-      </el-aside>
+    </el-aside>
       
       <!-- 主内容区 -->
-      <el-container>
+    <el-container>
         <el-header class="header">
-          <div class="header-left">
+        <div class="header-left">
             <h2>{{ router.currentRoute.value.meta.title }}</h2>
-          </div>
-          <div class="header-right">
+        </div>
+        <div class="header-right">
             <div class="user-info">
               <el-avatar :size="32" class="avatar">{{ username.charAt(0).toUpperCase() }}</el-avatar>
               <el-dropdown trigger="click">
@@ -151,14 +170,14 @@ onBeforeUnmount(() => {
                 </template>
               </el-dropdown>
             </div>
-          </div>
-        </el-header>
+        </div>
+      </el-header>
         
         <el-main class="main">
-          <router-view />
-        </el-main>
-      </el-container>
+        <router-view />
+      </el-main>
     </el-container>
+  </el-container>
   </div>
 </template>
 
